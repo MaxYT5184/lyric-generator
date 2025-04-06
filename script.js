@@ -1,23 +1,42 @@
-function generateLyrics() {
-  const theme = document.getElementById("themeInput").value.toLowerCase();
-  let lyrics = "";
+async function generateLyrics() {
+  const theme = document.getElementById("themeInput").value;
+  const output = document.getElementById("output");
 
-  if (theme.includes("love")) {
-    lyrics = `In the moonlight we collide\nHearts like stars, side by side\nLove’s a fire, can't deny\nYou and I, we touch the sky`;
-  } else if (theme.includes("sad")) {
-    lyrics = `Rain falls, so does my heart\nTorn apart, we're miles apart\nEchoes whisper in the night\nTears fall but out of sight`;
-  } else if (theme.includes("rap")) {
-    lyrics = `Yeah I rise from the block with a pen and a plan\nSteppin' up strong like a lyrical man\nBars so cold they freeze the air\nSpit truth so real, no cap, I swear`;
-  } else {
-    lyrics = `The wind carries dreams so high\nUnderneath the open sky\nRhythms flow from deep inside\nLet the melody be your guide`;
+  if (!theme.trim()) {
+    output.innerText = "❗ Please enter a theme!";
+    return;
   }
 
-  document.getElementById("output").innerText = lyrics;
+  output.innerText = "🎶 Generating lyrics...";
+
+  try {
+    const response = await fetch("https://your-backend-url.com/generate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ prompt: theme })
+    });
+
+    const data = await response.json();
+    output.innerText = data.lyrics || "No lyrics found.";
+  } catch (error) {
+    output.innerText = "❌ Failed to generate lyrics.";
+  }
 }
 
 function copyLyrics() {
   const text = document.getElementById("output").innerText;
   navigator.clipboard.writeText(text).then(() => {
-    alert("Lyrics copied to clipboard!");
+    alert("✅ Lyrics copied to clipboard!");
   });
+}
+
+function downloadLyrics() {
+  const text = document.getElementById("output").innerText;
+  const blob = new Blob([text], { type: "text/plain" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "lyrics.txt";
+  link.click();
 }
