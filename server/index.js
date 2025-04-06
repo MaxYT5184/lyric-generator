@@ -1,43 +1,42 @@
-// server/index.js
-const express = require("express");
-const cors = require("cors");
-const axios = require("axios");
 require("dotenv").config();
+const express = require("express");
+const fetch = require("node-fetch");
 
 const app = express();
-app.use(cors());
+const port = process.env.PORT || 3000;
+
 app.use(express.json());
 
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-
 app.post("/generate", async (req, res) => {
-  const { prompt } = req.body;
+  const prompt = req.body.prompt;
+
+  if (!prompt) {
+    return res.status(400).json({ error: "No prompt provided" });
+  }
 
   try {
-    const response = await axios.post(
-      "https://api.openai.com/v1/chat/completions",
-      {
-        model: "gpt-3.5-turbo",
-        messages: [{ role: "user", content: `Write a creative song with this theme: ${prompt}` }],
-        temperature: 0.7,
-        max_tokens: 150,
+    // Call OpenAI API with your secret key from the .env file
+    const openAIResponse = await fetch("https://api.openai.com/v1/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
       },
-      {
-        headers: {
-          Authorization: `Bearer ${OPENAI_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
+      body: JSON.stringify({
+        model: "text-davinci-003", // or another model
+        prompt: `Generate a song lyric about: ${prompt}`,
+        max_tokens: 150,
+      }),
+    });
 
-    const lyrics = response.data.choices[0].message.content;
-    res.json({ lyrics });
+    const data = await openAIResponse.json();
+    res.json({ lyrics: data.choices[0].text.trim() });
   } catch (error) {
-    res.status(500).json({ error: "Failed to generate lyrics." });
+    console.error("Error generating lyrics:", error);
+    res.status(500).json({ error: "Failed to generate lyrics" });
   }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
 });
